@@ -1,0 +1,86 @@
+name: Build DynamicPatches
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - auto-paths
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang make perl python3 git curl wget xz-utils bzip2 cpio
+
+      - name: Install Procursus tools
+        uses: dhinakg/procursus-action@main
+        with:
+          packages: ldid findutils sed coreutils make
+
+      - name: Setup RootHide Theos
+        uses: iossxx/theos-action@v1
+        with:
+          theos-dir: theos
+          theos-src: https://github.com/roothide/theos
+          theos-sdks: https://github.com/theos/sdks
+          theos-sdks-branch: master
+          orion: false
+
+      - name: Verify toolchain
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          set -eux
+          test -d "$THEOS"
+          find "$THEOS/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' -print
+          make --version
+          clang --version
+
+      - name: Build arm64 + arm64e RootHide package
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          set -eux
+          make clean
+          make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
+
+      - name: Inspect package
+        run: |
+          set -eux
+          ls -lah packages/
+          find packages -maxdepth 1 -type f -name '*.deb' -print
+          mkdir -p /tmp/dynamicpatches-pkg
+          for deb in packages/*.deb; do
+            dpkg-deb -I "$deb"
+            dpkg-deb -x "$deb" /tmp/dynamicpatches-pkg
+          done
+          find /tmp/dynamicpatches-pkg/usr/lib/DynamicPatches -maxdepth 1 -type f -print
+
+      - name: Verify AutoPatches architecture
+        run: |
+          set -eux
+          for file in /tmp/dynamicpatches-pkg/usr/lib/DynamicPatches/*.dylib; do
+            echo "=== $file ==="
+            file "$file"
+            llvm-lipo -info "$file" 2>/dev/null || true
+          done
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: DynamicPatches-roothide-${{ github.sha }}
+          path: packages/*.deb
+          if-no-files-found: error
