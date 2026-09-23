@@ -468,6 +468,8 @@ void InitPatches(const char* path, void* header, uint64_t slide)
     //test
     //DobbyHook((void*)posix_spawn, (void*)new_posix_spawn, (void**)&orig_posix_spawn);
 
+    dobby_enable_near_branch_trampoline();
+
     for(NSString* keypath in gPatchesConfig)
     {
         NSArray* patches = gPatchesConfig[keypath];
