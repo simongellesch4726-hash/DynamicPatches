@@ -31,13 +31,9 @@ jobs:
           packages: ldid findutils sed coreutils make
 
       - name: Setup RootHide Theos
-        uses: iossxx/theos-action@v1
+        uses: NyaMisty/theos-action@master
         with:
-          theos-dir: theos
           theos-src: https://github.com/roothide/theos
-          theos-sdks: https://github.com/theos/sdks
-          theos-sdks-branch: master
-          orion: false
 
       - name: Verify toolchain
         env:
