@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static NSSet<NSString *> *gFixedPaths;
+static NSMutableSet<NSString *> *gFixedPaths;
 
 static const char *redirectFixedPath(const char *path)
 {
@@ -84,7 +84,9 @@ static void loadFixedPathManifest(const char *binaryPath)
     }];
 
     if (!paths.count) return;
-    gFixedPaths = [paths copy];
+    if (!gFixedPaths)
+        gFixedPaths = [NSMutableSet set];
+    [gFixedPaths unionSet:paths];
 
     dobby_enable_near_branch_trampoline();
 
