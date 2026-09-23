@@ -39,6 +39,13 @@ jobs:
           make --version
           clang --version
 
+      - name: Build Dobby for iPhoneOS
+        run: |
+          set -eux
+          git clone --depth 1 --recurse-submodules https://github.com/jmpews/Dobby.git ../Dobby-master
+          python3 ../Dobby-master/scripts/platform_builder.py --platform=iphoneos --arch=all
+          test -f ../Dobby-master/build/iphoneos/universal/libdobby.a
+
       - name: Build AutoPatches
         env:
           THEOS: ${{ github.workspace }}/theos
