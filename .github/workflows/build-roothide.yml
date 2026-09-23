@@ -1,0 +1,51 @@
+name: Build DynamicPatches
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - auto-fixed-path-runtime
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          brew install dpkg ldid
+
+      - name: Install Theos
+        run: |
+          git clone --recursive https://github.com/roothide/theos.git $HOME/theos
+          echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
+
+      - name: Validate source
+        run: git diff --check
+
+      - name: Build Dobby
+        run: |
+          git clone --depth 1 https://github.com/jmpews/Dobby.git Dobby-master
+          sed -i '' '/^import pipes$/d' Dobby-master/scripts/platform_builder.py
+          python3 Dobby-master/scripts/platform_builder.py --platform iphoneos --arch all --library_build_type static
+          lipo -create \
+            Dobby-master/build/iphoneos/arm64/libdobby.a \
+            Dobby-master/build/iphoneos/arm64e/libdobby.a \
+            -output ./libdobby.a
+          lipo -info ./libdobby.a
+          test -f ./libdobby.a
+
+      - name: Build
+        run: |
+          export THEOS="$HOME/theos"
+          export PATH="$THEOS/bin:$PATH"
+          make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: DynamicPatches-roothide
+          path: packages/*.deb
+          if-no-files-found: error
