@@ -12,18 +12,13 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: macos-14
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential clang make perl python3 git curl wget xz-utils bzip2 cpio
 
       - name: Install Procursus tools
         uses: dhinakg/procursus-action@main
@@ -71,7 +66,7 @@ jobs:
           for file in /tmp/dynamicpatches-pkg/usr/lib/DynamicPatches/*.dylib; do
             echo "=== $file ==="
             file "$file"
-            llvm-lipo -info "$file" 2>/dev/null || true
+            lipo -info "$file"
           done
 
       - name: Upload Debian package
