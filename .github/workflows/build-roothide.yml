@@ -18,6 +18,21 @@ jobs:
           git clone --recursive https://github.com/roothide/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> "$GITHUB_ENV"
 
+      - name: Build Dobby
+        run: |
+          git clone --depth 1 https://github.com/jmpews/Dobby.git Dobby-master
+          cmake -S Dobby-master -B Dobby-master/build/iphoneos \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPlugin.SymbolResolver=ON \
+            -DNearBranch=ON
+          cmake --build Dobby-master/build/iphoneos --target dobby_static --config Release
+          mkdir -p Dobby-master/build/iphoneos/universal
+          cp Dobby-master/build/iphoneos/Release/libdobby.a Dobby-master/build/iphoneos/universal/libdobby.a
+
       - name: Build
         run: |
           export THEOS="$HOME/theos"
