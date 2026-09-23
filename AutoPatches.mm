@@ -13,7 +13,17 @@ static const char *redirectFixedPath(const char *path)
     if (!path || !gFixedPaths) return path;
 
     NSString *candidate = [NSString stringWithUTF8String:path];
-    if (!candidate || ![gFixedPaths containsObject:candidate]) return path;
+    if (!candidate) return path;
+
+    BOOL matched = NO;
+    for (NSString *fixedPath in gFixedPaths) {
+        if ([candidate isEqualToString:fixedPath] ||
+            [candidate hasPrefix:[fixedPath stringByAppendingString:@"/"]]) {
+            matched = YES;
+            break;
+        }
+    }
+    if (!matched) return path;
 
     const char *converted = jbroot(path);
     return converted ? converted : path;
