@@ -21,6 +21,7 @@ jobs:
       - name: Build Dobby
         run: |
           git clone --depth 1 https://github.com/jmpews/Dobby.git Dobby-master
+          sed -i '' '/^import pipes$/d' Dobby-master/scripts/platform_builder.py
           python3 Dobby-master/scripts/platform_builder.py --platform iphoneos --arch all --library_build_type static
           cp Dobby-master/build/iphoneos/universal/libdobby.a ./libdobby.a
           lipo -info ./libdobby.a
