@@ -23,6 +23,7 @@ jobs:
           git clone --depth 1 https://github.com/jmpews/Dobby.git Dobby-master
           cmake -S Dobby-master -B Dobby-master/build/iphoneos \
             -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
