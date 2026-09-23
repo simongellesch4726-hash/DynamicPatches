@@ -21,19 +21,11 @@ jobs:
       - name: Build Dobby
         run: |
           git clone --depth 1 https://github.com/jmpews/Dobby.git Dobby-master
-          cmake -S Dobby-master -B Dobby-master/build/iphoneos \
-            -DCMAKE_SYSTEM_NAME=iOS \
-            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
-            -DCMAKE_OSX_SYSROOT=iphoneos \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DPlugin.SymbolResolver=ON \
-            -DNearBranch=ON
-          cmake --build Dobby-master/build/iphoneos --target dobby_static --config Release
-          rm -f ./libdobby.a
-          find Dobby-master/build/iphoneos -name libdobby.a -type f -exec cp {} ./libdobby.a \;
+          python3 Dobby-master/scripts/platform_builder.py --platform iphoneos --arch all --library_build_type static
+          cp Dobby-master/build/iphoneos/universal/libdobby.a ./libdobby.a
+          lipo -info ./libdobby.a
           test -f ./libdobby.a
+
 
       - name: Build
         run: |
