@@ -43,8 +43,18 @@ jobs:
         run: |
           set -eux
           git clone --depth 1 --recurse-submodules https://github.com/jmpews/Dobby.git ../Dobby-master
-          python3 ../Dobby-master/scripts/platform_builder.py --platform=iphoneos --arch=all
-          test -f ../Dobby-master/build/iphoneos/universal/libdobby.a
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          for ARCH in arm64 arm64e; do
+            cmake -S ../Dobby-master -B "../Dobby-master/cmake-build-$ARCH"               -DCMAKE_SYSTEM_NAME=iOS               -DCMAKE_OSX_SYSROOT="$SDK"               -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0               -DCMAKE_OSX_ARCHITECTURES="$ARCH"               -DDOBBY_GENERATE_SHARED=OFF               -DDOBBY_DEBUG=OFF               -DDOBBY_BUILD_EXAMPLE=OFF               -DDOBBY_BUILD_TEST=OFF               -DNearBranch=ON
+            cmake --build "../Dobby-master/cmake-build-$ARCH" --config Release --parallel 2
+          done
+          ARM64_LIB="$(find ../Dobby-master/cmake-build-arm64 -name libdobby.a -type f -print -quit)"
+          ARM64E_LIB="$(find ../Dobby-master/cmake-build-arm64e -name libdobby.a -type f -print -quit)"
+          test -n "$ARM64_LIB"
+          test -n "$ARM64E_LIB"
+          mkdir -p ../Dobby-master/build/iphoneos/universal
+          lipo -create "$ARM64_LIB" "$ARM64E_LIB" -output ../Dobby-master/build/iphoneos/universal/libdobby.a
+          lipo -info ../Dobby-master/build/iphoneos/universal/libdobby.a
 
       - name: Build AutoPatches
         env:
