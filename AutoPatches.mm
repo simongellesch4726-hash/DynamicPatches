@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <roothide.h>
-#include <dobby.h>
+#include "dobby.h"
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
