@@ -5,7 +5,7 @@ THEOS_PACKAGE_SCHEME = roothide
 
 include $(THEOS)/makefiles/common.mk
 
-LIBRARY_NAME = FilzaPatches AutoPatches
+LIBRARY_NAME = FilzaPatches AutoPatches AutoPatches
 
 FilzaPatches_FILES = Patches.mm
 FilzaPatches_CFLAGS = -fobjc-arc
