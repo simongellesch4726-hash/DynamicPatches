@@ -42,12 +42,19 @@ jobs:
       - name: Build Dobby for iPhoneOS
         run: |
           set -eux
+          mkdir -p diagnostics
           git clone --depth 1 --recurse-submodules https://github.com/jmpews/Dobby.git ../Dobby-master
           SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
-          for ARCH in arm64 arm64e; do
-            cmake -S ../Dobby-master -B "../Dobby-master/cmake-build-$ARCH"               -DCMAKE_SYSTEM_NAME=iOS               -DCMAKE_OSX_SYSROOT="$SDK"               -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0               -DCMAKE_OSX_ARCHITECTURES="$ARCH"               -DDOBBY_GENERATE_SHARED=OFF               -DDOBBY_DEBUG=OFF               -DDOBBY_BUILD_EXAMPLE=OFF               -DDOBBY_BUILD_TEST=OFF               -DNearBranch=ON
-            cmake --build "../Dobby-master/cmake-build-$ARCH" --config Release --parallel 2
-          done
+          set +e
+          {
+            for ARCH in arm64 arm64e; do
+              echo "=== Dobby $ARCH ==="
+              cmake -S ../Dobby-master -B "../Dobby-master/cmake-build-$ARCH"                 -DCMAKE_SYSTEM_NAME=iOS                 -DCMAKE_OSX_SYSROOT="$SDK"                 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0                 -DCMAKE_OSX_ARCHITECTURES="$ARCH"                 -DDOBBY_GENERATE_SHARED=OFF                 -DDOBBY_DEBUG=OFF                 -DDOBBY_BUILD_EXAMPLE=OFF                 -DDOBBY_BUILD_TEST=OFF                 -DNearBranch=ON
+              cmake --build "../Dobby-master/cmake-build-$ARCH" --config Release --parallel 2
+            done
+          } 2>&1 | tee diagnostics/dobby.log
+          rc="${PIPESTATUS[0]}"
+          if [ "$rc" -ne 0 ]; then exit "$rc"; fi
           ARM64_LIB="$(find ../Dobby-master/cmake-build-arm64 -name libdobby.a -type f -print -quit)"
           ARM64E_LIB="$(find ../Dobby-master/cmake-build-arm64e -name libdobby.a -type f -print -quit)"
           test -n "$ARM64_LIB"
@@ -55,6 +62,14 @@ jobs:
           mkdir -p ../Dobby-master/build/iphoneos/universal
           lipo -create "$ARM64_LIB" "$ARM64E_LIB" -output ../Dobby-master/build/iphoneos/universal/libdobby.a
           lipo -info ../Dobby-master/build/iphoneos/universal/libdobby.a
+
+      - name: Upload Dobby diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoPatches-dobby-log-${{ github.sha }}
+          path: diagnostics
+          if-no-files-found: warn
 
       - name: Build AutoPatches
         env:
