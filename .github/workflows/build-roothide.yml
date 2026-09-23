@@ -31,8 +31,9 @@ jobs:
             -DPlugin.SymbolResolver=ON \
             -DNearBranch=ON
           cmake --build Dobby-master/build/iphoneos --target dobby_static --config Release
-          mkdir -p Dobby-master/build/iphoneos/universal
-          find Dobby-master/build/iphoneos -name libdobby.a -type f -exec cp {} Dobby-master/build/iphoneos/universal/libdobby.a \;
+          rm -f ./libdobby.a
+          find Dobby-master/build/iphoneos -name libdobby.a -type f -exec cp {} ./libdobby.a \;
+          test -f ./libdobby.a
 
       - name: Build
         run: |
