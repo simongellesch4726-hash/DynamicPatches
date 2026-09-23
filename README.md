@@ -108,3 +108,21 @@ so in the end the patches we got is as follows:
 4. usually a patch will only replace one line of code, but in some cases a patch may also require space for three lines of code,
    so it is recommended that the address of 2 code patches should be separated by 3x4=12 bytes.
    
+
+
+## Automatic RootHide path compatibility
+
+The `AutoPatches.dylib` target provides package-agnostic path handling for converted rootless tweaks.
+
+It is intentionally conservative:
+
+- `/var/jb` and the known jailbreak-owned writable namespaces (`/var/tmp`, `/var/log`, `/var/cache`, `/var/lib`, `/var/empty`, `/var/config`) are treated as jailbreak-path candidates.
+- Root filesystem/user-data namespaces such as `/var/mobile`, `/var/db`, `/var/run`, `/var/folders`, and `/var/containers` are excluded.
+- Objective-C `__CFString` path constants are converted automatically when they match the candidate policy.
+- C-string paths are converted at filesystem API boundaries (open/openat/fopen/stat/lstat/access/unlink/rmdir/mkdir/chdir/opendir/remove/rename/link/symlink), avoiding the need to guess an instruction address and register.
+- Relative `openat` paths are left untouched because their namespace depends on the supplied file descriptor.
+- Symlink targets are left untouched; only a jailbreak-owned symlink destination is converted.
+
+This does not rewrite arbitrary strings in the Mach-O. The purpose is to convert a path at the point where it is actually consumed while preserving RootHide's distinction between the randomized jailbreak root and the original iOS root filesystem.
+
+The module uses RootHide's `jbroot()` API at runtime, so no randomized physical jailbreak path is embedded in the converted tweak.
