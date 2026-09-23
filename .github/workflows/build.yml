@@ -1,0 +1,69 @@
+name: Build AutoPatches
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - auto-config
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Procursus tools
+        uses: dhinakg/procursus-action@main
+        with:
+          packages: ldid findutils sed coreutils make
+
+      - name: Setup RootHide Theos
+        uses: NyaMisty/theos-action@master
+        with:
+          theos-src: https://github.com/roothide/theos
+
+      - name: Verify toolchain
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          set -eux
+          test -d "$THEOS"
+          find "$THEOS/sdks" -maxdepth 1 -type d -name 'iPhoneOS*.sdk' -print
+          make --version
+          clang --version
+
+      - name: Build AutoPatches
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          set -eux
+          make clean
+          make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=roothide
+
+      - name: Inspect package
+        run: |
+          set -eux
+          ls -lah packages/
+          deb="$(find packages -maxdepth 1 -type f -name '*.deb' | head -n1)"
+          test -n "$deb"
+          dpkg-deb -I "$deb"
+          rm -rf /tmp/autopatches-pkg
+          mkdir -p /tmp/autopatches-pkg
+          dpkg-deb -x "$deb" /tmp/autopatches-pkg
+          test -f /tmp/autopatches-pkg/usr/lib/DynamicPatches/AutoPatches.dylib
+          file /tmp/autopatches-pkg/usr/lib/DynamicPatches/AutoPatches.dylib
+          lipo -info /tmp/autopatches-pkg/usr/lib/DynamicPatches/AutoPatches.dylib
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoPatches-roothide-${{ github.sha }}
+          path: packages/*.deb
+          if-no-files-found: error
