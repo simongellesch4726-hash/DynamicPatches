@@ -35,11 +35,6 @@ static void patchHandler(void *address, DobbyRegisterContext *ctx) {
     }
 }
 
-static BOOL pathEqual(NSString *a, const char *b) {
-    if (!a || !b) return NO;
-    return [a isEqualToString:[NSString stringWithUTF8String:b]];
-}
-
 static NSArray *loadConfig(const char *targetPath) {
     NSString *path = [NSString stringWithFormat:@"%s.roothidepatch.plist", targetPath];
     NSArray *patches = [NSArray arrayWithContentsOfFile:path];
